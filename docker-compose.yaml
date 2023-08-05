@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  mongodb:
+  mongodb: # Be careful, all these are container names.
     image: mongo
     restart: always
     volumes:
@@ -44,5 +44,67 @@ services:
   #  ✔ Volume docker-compose-setup_mongodb-data  Removed                                                                  0.0s
   #  ✔ Network docker-compose-setup_default      Removed
 
+  backend:
+    # build: ./backend (not recommended, following reasons)
+    # => short format is enough if you have Dockerfile
+    # => COPY . . considers entire root folder which is not needed.
+    # => Only /backend files should be copied while image is building
+
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # dockerfile: Dockerfile.prod
+    # dockerfile: Dockerfile.dev
+    # args:
+    #   - some-arg: 1
+
+    ports:
+      - '80:80'
+
+    volumes:
+      - logs:/app/logs
+      - ./backend:/app # this is actually bind mount(must be used for development purposes) relative to docker-compose.yaml file
+      # Normally we set absolute path $(pwd):/app when we run containers using docker run command,
+      # but docker-compose is smart enough to covert relative path to absolute path
+      - /app/node_modules # anonymous volumes can be directly added without mentioning in the bottom volumes key
+
+    env_file:
+      - ./environments/backend.env
+
+    # node container should be started only after mongo container up and running,
+    # with depends_on propery we define it
+    depends_on:
+      - mongodb
+      # - can have multiple containers that this container depends on.
+      # For example any container that has front code or nginx image that
+      # serves static files should be started only after mongo & node application starts
+
+# docker-compose up -d
+# [+] Running 5/5
+#  ✔ Network docker-compose-setup_default        Created
+#  ✔ Volume "docker-compose-setup_mongodb-data"  Created
+#  ✔ Volume "docker-compose-setup_logs"          Created
+#  ✔ Container docker-compose-setup-mongodb-1    Created
+#  ✔ Container docker-compose-setup-backend-1    Created
+# Attaching to docker-compose-setup-backend-1, docker-compose-setup-mongodb-1
+# docker-compose-setup-mongodb-1, docker-compose-setup-backend-1 => these are also container names only.
+# mongodb, backend => these are also container names for docker internal container communications.
+# For example, we used 'mongodb' name as IP address(of mongodb container) in backend app's connection string
+# to connect to mongodb container.
+
+# docker-compose down => down without destroying volumes
+# [+] Running 2/2
+#  ✔ Container docker-compose-setup-backend-1   Removed
+#  ✔ Container docker-compose-setup-mongodb-1   Removed
+
+# docker-compose down -v
+# [+] Running 5/5
+#  ✔ Container docker-compose-setup-backend-1   Removed
+#  ✔ Container docker-compose-setup-mongodb-1   Removed
+#  ✔ Volume docker-compose-setup_logs           Removed
+#  ✔ Volume docker-compose-setup_mongodb-data   Removed
+#  ✔ Network docker-compose-setup_default       Removed
+
 volumes:
   mongodb-data:
+  logs:

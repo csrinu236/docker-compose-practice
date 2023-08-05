@@ -26,6 +26,13 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/', async (req, res) => {
+  // console.log('SUCCESS FULL HOME ROUTE');
+  res.status(200).json({
+    message: 'SUCCESSFULLY WORKING HOME ROUTE',
+  });
+});
+
 app.get('/goals', async (req, res) => {
   console.log('TRYING TO FETCH GOALS');
   try {
