@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo
+    restart: always
+    volumes:
+      - mongodb-data:/data/db
+    # you should also define named volumes(anonymous and bindmountd no need to specify)
+    # at the bottom to share this volume among multiple containers
+    # environment:
+    # way1 => key value pairs(not recommended)
+    # MONGO_INITDB_ROOT_USERNAME: srinu
+    # MONGO_INITDB_ROOT_PASSWORD: secret
+    # way2 => putting it in env file (recommended)
+    env_file: ./environments/mongo.env
+    # networks: #optional
+    # - srinu-network
+    # Actually docker compose takes care of creating a network and adding containers to it
+    # but if you have already created network manually, you want specify, you can do it like above
+
+  # starting docker-compose
+  # docker-compose up => not only builds individual images but also starts
+  # each and every container simultaneously. No need a seperate start command needed.
+
+  # When you run docker-compose up, you will see the following
+  # <name of root project in which docker-compose.yaml exists>_<default things from docker-compose>
+  # [+] Running 3/3
+  # ✔ Network docker-compose-setup_default        Created=>Default network Created
+  # ✔ Volume "docker-compose-setup_mongodb-data"  Created
+  # ✔ Container docker-compose-setup-mongodb-1    Created=>Image built and Container Started
+  # Attaching to docker-compose-setup-mongodb-1  Default mode for all containers is attached mode
+  # docker-compose up -d => starts the container in detached mode.
+
+  # if you wanna stop all services, deletes all services and delete networks
+  # docker-compose down => volumes are not deleted of course or else that defeats the purpose of volumes and data persistence.
+  # [+] Running 2/2
+  #  ✔ Container docker-compose-setup-mongodb-1  Removed                                                                  0.2s
+  #  ✔ Network docker-compose-setup_default      Removed
+
+  # if you also want to delete volumes along with everything
+  # docker-compose down -v
+  # [+] Running 3/3
+  #  ✔ Container docker-compose-setup-mongodb-1  Removed                                                                  0.0s
+  #  ✔ Volume docker-compose-setup_mongodb-data  Removed                                                                  0.0s
+  #  ✔ Network docker-compose-setup_default      Removed
+
+volumes:
+  mongodb-data:
