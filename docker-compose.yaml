@@ -12,7 +12,7 @@ services:
     # MONGO_INITDB_ROOT_USERNAME: srinu
     # MONGO_INITDB_ROOT_PASSWORD: secret
     # way2 => putting it in env file (recommended)
-    env_file: ./environments/mongo.env
+    env_file: ./environments/mongo.env #these env vars are floating in the air in this container file sysyem to be used inside the container file system.
     # networks: #optional
     # - srinu-network
     # Actually docker compose takes care of creating a network and adding containers to it
@@ -53,57 +53,82 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    # dockerfile: Dockerfile.prod
-    # dockerfile: Dockerfile.dev
+    # 1)dockerfile: Dockerfile.prod
+    # 2)dockerfile: Dockerfile.dev
+    # 3)dockerfile: /some-nested-folder/Dockerfile =>in this Dockerfile, the command
+    # COPY . . refers to nested folder ka files system. So inorder to
+    # refer to backenf folder ka file system, you should set context
+    # as ./backend
+
     # args:
-    #   - some-arg: 1
+    #   - some-arg: 1 => may be for setting any ARG variable(during development,
+    # we may want to test something, and instead of changing it ay multiple places
+    # manually by going to Dockerfile, we can do with the help of ARGUMENTS )
+    # while building the image.
 
     ports:
-      - '80:80'
+      - '80:80' # we are porting this out for front end, because front code runs on browser,
+    # and browser doesnot understand, fetch('backend:80/goals') (docker bridge can understand this, but not browser)
 
     volumes:
       - logs:/app/logs
-      - ./backend:/app # this is actually bind mount(must be used for development purposes) relative to docker-compose.yaml file
+      - ./backend:/app
+      # this is actually bind mount(must be used for development purposes) relative to docker-compose.yaml file
       # Normally we set absolute path $(pwd):/app when we run containers using docker run command,
       # but docker-compose is smart enough to covert relative path to absolute path
       - /app/node_modules # anonymous volumes can be directly added without mentioning in the bottom volumes key
 
     env_file:
-      - ./environments/backend.env
-
+      - ./environments/backend.env #these env vars are floating in the air in this container file sysyem to be used inside the container file system.
     # node container should be started only after mongo container up and running,
     # with depends_on propery we define it
-    depends_on:
+    depends_on: # docker-compose by default runs all the containers at one GO, we CAN STOP it and we SHOULD STOP it.
       - mongodb
-      # - can have multiple containers that this container depends on.
+      # - can have multiple containers that this container depends on,
       # For example any container that has front code or nginx image that
       # serves static files should be started only after mongo & node application starts
+    container_name: mongodb-container
+    # if you don't want to have cryptic container names like
+    # docker-compose-setup-mongodb-1 => you can simply have your own container names like this.
 
-# docker-compose up -d
-# [+] Running 5/5
-#  ✔ Network docker-compose-setup_default        Created
-#  ✔ Volume "docker-compose-setup_mongodb-data"  Created
-#  ✔ Volume "docker-compose-setup_logs"          Created
-#  ✔ Container docker-compose-setup-mongodb-1    Created
-#  ✔ Container docker-compose-setup-backend-1    Created
-# Attaching to docker-compose-setup-backend-1, docker-compose-setup-mongodb-1
-# docker-compose-setup-mongodb-1, docker-compose-setup-backend-1 => these are also container names only.
-# mongodb, backend => these are also container names for docker internal container communications.
-# For example, we used 'mongodb' name as IP address(of mongodb container) in backend app's connection string
-# to connect to mongodb container.
+  # docker-compose up -d
+  # [+] Running 5/5
+  #  ✔ Network docker-compose-setup_default        Created
+  #  ✔ Volume "docker-compose-setup_mongodb-data"  Created
+  #  ✔ Volume "docker-compose-setup_logs"          Created
+  #  ✔ Container docker-compose-setup-mongodb-1    Created
+  #  ✔ Container docker-compose-setup-backend-1    Created
+  # Attaching to docker-compose-setup-backend-1, docker-compose-setup-mongodb-1
+  # docker-compose-setup-mongodb-1, docker-compose-setup-backend-1 => these are also container names only.
+  # mongodb, backend => these are also container names for docker internal container communications.
+  # For example, we used 'mongodb' name as IP address(of mongodb container) in backend app's connection string
+  # to connect to mongodb container.
 
-# docker-compose down => down without destroying volumes
-# [+] Running 2/2
-#  ✔ Container docker-compose-setup-backend-1   Removed
-#  ✔ Container docker-compose-setup-mongodb-1   Removed
+  # docker-compose down => down without destroying volumes
+  # [+] Running 2/2
+  #  ✔ Container docker-compose-setup-backend-1   Removed
+  #  ✔ Container docker-compose-setup-mongodb-1   Removed
 
-# docker-compose down -v
-# [+] Running 5/5
-#  ✔ Container docker-compose-setup-backend-1   Removed
-#  ✔ Container docker-compose-setup-mongodb-1   Removed
-#  ✔ Volume docker-compose-setup_logs           Removed
-#  ✔ Volume docker-compose-setup_mongodb-data   Removed
-#  ✔ Network docker-compose-setup_default       Removed
+  # docker-compose down -v
+  # [+] Running 5/5
+  #  ✔ Container docker-compose-setup-backend-1   Removed
+  #  ✔ Container docker-compose-setup-mongodb-1   Removed
+  #  ✔ Volume docker-compose-setup_logs           Removed
+  #  ✔ Volume docker-compose-setup_mongodb-data   Removed
+  #  ✔ Network docker-compose-setup_default       Removed
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend/src:/app/src
+    # stdin_open: true #by default everything is in attached mode && when node server is running, why these are needed ?
+    # tty: true
+    depends_on:
+      - backend
 
 volumes:
   mongodb-data:

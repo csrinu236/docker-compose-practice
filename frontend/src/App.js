@@ -15,6 +15,7 @@ function App() {
 
       try {
         const response = await fetch('http://localhost/goals');
+        // const response = await fetch('backend:80/goals');
 
         const resData = await response.json();
 
@@ -45,8 +46,8 @@ function App() {
           text: goalText,
         }),
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const resData = await response.json();
